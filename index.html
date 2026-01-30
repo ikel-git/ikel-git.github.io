@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Terminal</title>
+  <style>
+    body {
+      background: #000;
+      color: #0f0;
+      font-family: monospace;
+      padding: 20px;
+    }
+
+    #terminal {
+      white-space: pre-wrap;
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 10px;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="terminal">></div><span class="cursor">|</span>
+
+<script>
+  let respostas = {};
+  let entradaAtual = "";
+
+  const terminal = document.getElementById("terminal");
+
+  fetch("respostas.json")
+    .then(res => res.json())
+    .then(data => {
+      respostas = data;
+    });
+
+  document.addEventListener("keydown", function (e) {
+
+    if (e.key === "Enter") {
+      terminal.textContent += "\n";
+
+      if (respostas[entradaAtual]) {
+        terminal.textContent += "> " + respostas[entradaAtual] + "\n";
+      }
+
+      terminal.textContent += ">";
+      entradaAtual = "";
+      return;
+    }
+
+    if (e.key === "Backspace") {
+      entradaAtual = entradaAtual.slice(0, -1);
+      terminal.textContent = terminal.textContent.slice(0, -1);
+      return;
+    }
+
+    if (e.key.length === 1) {
+      entradaAtual += e.key;
+      terminal.textContent += e.key;
+    }
+  });
+</script>
+
+</body>
+</html>
