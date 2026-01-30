@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Terminal</title>
+
   <style>
     body {
       background: #000;
@@ -13,49 +14,74 @@
 
     #terminal {
       white-space: pre-wrap;
+      line-height: 1.4;
     }
+
+    #cursor {
+      display: inline-block;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
     }
   </style>
 </head>
 <body>
 
-<div id="terminal">></div><span class="cursor">|</span>
+<div id="terminal">><span id="cursor">|</span></div>
 
 <script>
   let respostas = {};
   let entradaAtual = "";
 
   const terminal = document.getElementById("terminal");
+  const cursor = document.getElementById("cursor");
 
   fetch("respostas.json")
     .then(res => res.json())
     .then(data => {
       respostas = data;
+    })
+    .catch(() => {
+      respostas = {};
     });
+
+  function escreverAntesDoCursor(texto) {
+    terminal.removeChild(cursor);
+    terminal.textContent += texto;
+    terminal.appendChild(cursor);
+  }
 
   document.addEventListener("keydown", function (e) {
 
     if (e.key === "Enter") {
-      terminal.textContent += "\n";
+      escreverAntesDoCursor("\n");
 
       if (respostas[entradaAtual]) {
-        terminal.textContent += "> " + respostas[entradaAtual] + "\n";
+        escreverAntesDoCursor("> " + respostas[entradaAtual] + "\n");
       }
 
-      terminal.textContent += ">";
+      escreverAntesDoCursor(">");
       entradaAtual = "";
       return;
     }
 
     if (e.key === "Backspace") {
+      if (entradaAtual.length === 0) return;
+
       entradaAtual = entradaAtual.slice(0, -1);
+
+      terminal.removeChild(cursor);
       terminal.textContent = terminal.textContent.slice(0, -1);
+      terminal.appendChild(cursor);
       return;
     }
 
     if (e.key.length === 1) {
       entradaAtual += e.key;
-      terminal.textContent += e.key;
+      escreverAntesDoCursor(e.key);
     }
   });
 </script>
