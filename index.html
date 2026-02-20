@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Terminal</title>
-
   <style>
     body {
       background: #000;
@@ -11,17 +10,14 @@
       font-family: monospace;
       padding: 20px;
     }
-
     #terminal {
       white-space: pre-wrap;
       line-height: 1.4;
     }
-
     #cursor {
       display: inline-block;
       animation: blink 1s infinite;
     }
-
     @keyframes blink {
       0%, 50% { opacity: 1; }
       51%, 100% { opacity: 0; }
@@ -29,62 +25,91 @@
   </style>
 </head>
 <body>
-
-<div id="terminal">><span id="cursor">|</span></div>
+<div id="terminal"></div>
 
 <script>
   let respostas = {};
-  let entradaAtual = "";
-
+  let linhas = [">"];          // histórico de linhas já fixadas (inclui prompts)
+  let entradaAtual = "";        // texto sendo digitado na linha atual
   const terminal = document.getElementById("terminal");
-  const cursor = document.getElementById("cursor");
 
-  fetch("respostas.json")
-    .then(res => res.json())
-    .then(data => {
-      respostas = data;
-    })
-    .catch(() => {
-      respostas = {};
-    });
-
-  function escreverAntesDoCursor(texto) {
-    terminal.removeChild(cursor);
-    terminal.textContent += texto;
-    terminal.appendChild(cursor);
+  // Função para desenhar todo o terminal baseado no estado atual
+  function renderizar() {
+    // Junta as linhas do histórico com quebras de linha
+    let conteudo = linhas.join("\n");
+    // Adiciona o que está sendo digitado (sem quebra de linha extra)
+    conteudo += entradaAtual;
+    // Insere o cursor como elemento HTML (para piscar)
+    terminal.innerHTML = conteudo + '<span id="cursor">|</span>';
+    // Rola para o final automaticamente
+    terminal.scrollTop = terminal.scrollHeight;
   }
 
+  // Carrega o arquivo JSON
+  fetch("respostas.json")
+    .then(response => {
+      if (!response.ok) {
+        throw new Error("Erro ao carregar JSON: " + response.status);
+      }
+      return response.json();
+    })
+    .then(data => {
+      respostas = data;
+      // Mensagem opcional de sucesso
+      linhas.push("> Arquivo de respostas carregado.");
+      linhas.push(">");
+      entradaAtual = "";
+      renderizar();
+    })
+    .catch(error => {
+      console.error(error);
+      linhas.push("> ERRO: Não foi possível carregar respostas.json.");
+      linhas.push(">");
+      entradaAtual = "";
+      renderizar();
+    });
+
+  // Renderização inicial (enquanto o JSON não carrega)
+  renderizar();
+
   document.addEventListener("keydown", function (e) {
+    // Previne ações padrão para as teclas que queremos controlar
+    if (e.key === "Enter" || e.key === "Backspace" || e.key.length === 1) {
+      e.preventDefault();
+    }
 
     if (e.key === "Enter") {
-      escreverAntesDoCursor("\n");
+      // Finaliza a linha atual: adiciona ao histórico
+      linhas.push(entradaAtual);
 
-      if (respostas[entradaAtual]) {
-        escreverAntesDoCursor("> " + respostas[entradaAtual] + "\n");
+      // Verifica se a entrada corresponde a alguma chave (ignora espaços extras)
+      const chave = entradaAtual.trim();
+      if (respostas.hasOwnProperty(chave)) {
+        // Adiciona a resposta como uma nova linha (com prefixo > para destacar)
+        linhas.push("> " + respostas[chave]);
       }
+      // Se não houver resposta, apenas continua (não adiciona linha extra)
 
-      escreverAntesDoCursor(">");
+      // Adiciona novo prompt
+      linhas.push(">");
       entradaAtual = "";
+      renderizar();
       return;
     }
 
     if (e.key === "Backspace") {
-      if (entradaAtual.length === 0) return;
-
-      entradaAtual = entradaAtual.slice(0, -1);
-
-      terminal.removeChild(cursor);
-      terminal.textContent = terminal.textContent.slice(0, -1);
-      terminal.appendChild(cursor);
+      if (entradaAtual.length > 0) {
+        entradaAtual = entradaAtual.slice(0, -1);
+        renderizar();
+      }
       return;
     }
 
     if (e.key.length === 1) {
       entradaAtual += e.key;
-      escreverAntesDoCursor(e.key);
+      renderizar();
     }
   });
 </script>
-
 </body>
 </html>
