@@ -55,10 +55,7 @@
     })
     .then(data => {
       respostas = data;
-      // Mensagem opcional de sucesso
-      linhas.push("> Arquivo de respostas carregado.");
-      linhas.push(">");
-      entradaAtual = "";
+      // Apenas atualiza a tela, sem mensagens extras
       renderizar();
     })
     .catch(error => {
